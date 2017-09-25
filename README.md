@@ -50,11 +50,34 @@ WHERE age > 30;
 
 ### MongoDB
 
-
+MongoDB stores JSON documents in collections. This is a different approach to relational databases so it's called NoSQL.
 
 ### JSON/BSON
 
-
+```JSON
+{
+  "_id": "59c90bd0144c91321ac19c45",
+  "id": 729575,
+  "url": "http://www.tvmaze.com/episodes/729575/game-of-thrones-6x10-the-winds-of-winter",
+  "name": "The Winds of Winter",
+  "season": 6,
+  "number": 10,
+  "airdate": "2016-06-26",
+  "airtime": "21:00",
+  "airstamp": "2016-06-27T01:00:00+00:00",
+  "runtime": 69,
+  "image": {
+    "medium": "http://static.tvmaze.com/uploads/images/medium_landscape/63/157920.jpg",
+    "original": "http://static.tvmaze.com/uploads/images/original_untouched/63/157920.jpg"
+  },
+  "summary": "<p>Alliances are made, the High Sparrow is holding trials at King's Landing, Daenerys is sailing for the Seven Kingdoms and a new King of the North is crowned.</p>",
+  "_links": {
+    "self": {
+      "href": "http://api.tvmaze.com/episodes/729575"
+    }
+  }
+}
+```
 
 ## Installing MongoDB
 
@@ -132,7 +155,7 @@ $ 'C:\Program Files\MongoDB\Server\3.4\bin\mongo.exe'
 ```
 
 ```
-> db.coll.insert({ name: "", age: 27 })
+> db.coll.insertOne({ name: "Alice", age: 27 })
 ```
 
 ```
@@ -159,15 +182,15 @@ $ mongoimport -d school -c movies --jsonArray --file data.json
 
 ### Update
 
-updateOne
+`updateOne`
 
-updateMany
+`updateMany`
 
 ### Delete
 
-deleteOne
+`deleteOne`
 
-deleteMany
+`deleteMany`
 
 
 ## Indexing and Performance
