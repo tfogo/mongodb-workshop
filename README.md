@@ -139,9 +139,13 @@ $ 'C:\Program Files\MongoDB\Server\3.4\bin\mongo.exe'
 > db.coll.find()
 ```
 
-### The `_id` field 
+### The `_id` field
 
 ### Comparison
+
+```
+$ mongoimport -d school -c movies --jsonArray --file data.json
+```
 
 `$gt` `$lt`
 
@@ -192,8 +196,8 @@ $ npm install mongoose
 const mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/test', { useMongoClient: true });
 
-movieSchema = { 
-  name: String 
+movieSchema = {
+  name: String
 }
 
 var Movie = mongoose.model('Movie', movieSchema);
