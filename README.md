@@ -421,11 +421,52 @@ MongoDB adds an `_id` property to each inserted document. The value of `_id` is 
 The ObjectId is a 24-character hex string. You'll notice it's wrapped in `ObjectId()`. This is a special BSON type. You can read more about ObjectIds in the [ObjectId documentation](https://docs.mongodb.com/manual/reference/bson-types/#objectid).
 
 
-### Comparison
+## Querying
+
+Exit the Mongo shell by running the exit command:
 
 ```
-$ mongoimport -d pokedex -c pokemon --jsonArray --file pokedex.json
+> exit
+bye
 ```
+
+You should now be back on your command line. Let's download some data about Pokemon. On Mac/Linux you can run this command:
+
+```
+$ curl https://raw.githubusercontent.com/tfogo/mongodb-workshop/master/pokedex.json -o pokedex.json
+```
+
+On Windows, you may not have `curl` installed, so you can right click on this link and select _Save Link As_: [pokedex.json](https://raw.githubusercontent.com/tfogo/mongodb-workshop/master/pokedex.json).
+
+Now import the data into the `pokemon` collection in the `pokedex` database using the `mongoimport` command:
+
+```
+$ mongoimport -d pokedex -c pokemon --jsonArray --maintainInsertionOrder --file pokedex.json
+2018-02-16T12:44:37.951-0800    connected to: localhost
+2018-02-16T12:44:37.968-0800    imported 151 documents
+```
+
+Start the Mongo shell again:
+
+```
+$ mongo
+MongoDB shell version v3.6.1
+connecting to: mongodb://127.0.0.1:27017
+MongoDB server version: 3.6.1
+>
+```
+
+Now let's take a look at the databases:
+
+```
+> show dbs
+admin   0.000GB
+local   0.000GB
+pokedex 0.000GB
+test    0.000GB
+```
+
+Switch to use the `pokedex` database:
 
 ```
 > use pokedex
@@ -439,16 +480,101 @@ This sets the `db` variable to the `pokedex` database:
 pokedex
 ```
 
+Now we can view the documents in the `pokemon` collection:
 
-`$gt` `$lt`
+```
+> db.pokemon.find().pretty()
+```
 
-` db.coll.find({ season: {$gt: 3}})`
+The `.pretty()` method will output the documents in an easily readable format. There are 151 documents in the collection, but you'll notice the shell only printed 20 of them, then said this:
 
-`{$exists: true}`
+```
+Type "it" for more
+```
 
-`{$size: 1}`
+This is because queries don't return documents directly, they return a cursor. Then you iterate over the cursor to return documents. This is so that, if you have a million documents in a collection, you don't return them all at once which could seriously hamper your application's performance. The Mongo shell iterates over cursors in 20 document batches. Most drivers in programming languages have batches of 101 documents. The batch size can vary depending on a lot of things, it's just something to be aware of.
+
+Iterate to the next batch of documents by typing `it`:
+
+```
+> it
+```
+
+You can pass a _filter document_ to the `find()` method to filter the documents by their properties. This command will return all documents where the `name` is `"Charizard"`:
+
+```
+> db.pokemon.find({ name: "Charizard" }).pretty()
+```
+
+This will return all documents where the `height` is `"1.70 m"`:
+
+```
+> db.pokemon.find({ height: "1.70 m" }).pretty()
+```
+
+You can see that this returns 6 Pokemon (Charizard, Golduck, Victreebel, Rapidash, Dewgong, and Articuno).
+
+You can also drill into document properties using the dot notation that is common in JavaScript objects (See [here](https://docs.mongodb.com/manual/core/document/#dot-notation) for more information.)
+
+There are many special _query operators_ which start with `$` signs that can be used to locate documents. Here we use the `$gt` operator to find all Pokemon with a weight more than `"90.0 kg"`:
+
+```
+> db.pokemon.find({ weight: { $gt: "90.0 kg" } }).pretty()
+```
+
+This returns just two Pokemon (Charizard and Rapidash).
+
+To find the rarest Pokemon, we can use the `$lt` operator. This will return the Pokemon that have a spawn chance of less than 0.1%:
+
+```
+> db.pokemon.find({ spawn_chance: { $lt: 0.001 } }).pretty()
+```
+
+There are only 6 Pokemon that are this rare (Ditto, Articuno, Zapdos, Moltres, Mewtwo, and Mew).
+
+There are operators for nearly any type of filtering you may want to do. Read the [Query and Projection Operators](https://docs.mongodb.com/manual/reference/operator/query/) documentation to learn about what's available. Here are a few examples you may find useful:
+
+Find all Pokemon that have only one type (checks that the `type` array has only 1 element):
+
+```
+> db.pokemon.find({ type: { $size: 1 } }).pretty()
+```
+
+Find all Pokemon that are in their final evolution state (checks for the documents that don't have a `next_evolution` property):
+
+```
+> db.pokemon.find({ type: { $all: ["water"] } }).pretty()
+```
+
+Find all the Pokemon that are both water type and less than 1.00 m tall:
+
+```
+> db.pokemon.find({ $and: [ { type: "Water" }, { height: { $lt: "1.00 m" } } ] }).pretty()
+```
 
 
+## Counting
+
+You can count the number of documents that match a _filter document_ by using the `count` method on a collection:
+
+```
+> db.pokemon.count()
+151
+> db.pokemon.count({ height: "1.70 m" })
+6
+```
+
+Or, instead of appending `.pretty()` to `find` queries, you can append `.count()`:
+
+```
+> db.pokemon.find({ height: "1.70 m" }).count()
+6
+```
+
+
+### Projection
+
+If you don't want to return all the properties in a document, you can use a _projection document_ as the second 
 
 ### Update
 
@@ -469,7 +595,20 @@ db.collection.createIndex({property: 1})
 
 ## Aggregation Framework
 
-Mention briefly
+You can create even more complex queries by using the _Aggregation Framework_. These are
+
+For example, this will select a random Pokemon:
+
+```
+```
+
+This will group Pokemon by their type:
+
+```
+```
+
+You can delve deeper into aggregations in the documentation.
+
 
 ## NodeJS and Mongoose
 
