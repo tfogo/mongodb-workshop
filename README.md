@@ -454,7 +454,7 @@ $ mongoimport -h <host>:<port> -d <database> -c <collection> -u <user> -p <passw
 Start the Mongo shell again:
 
 ```
-$ mongo
+$ mongo mongodb://ds012345@mlab.com:12345 -u username -p password
 MongoDB shell version v3.6.1
 connecting to: mongodb://ds012345@mlab.com:12345
 MongoDB server version: 3.4.10
