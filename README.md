@@ -1,4 +1,4 @@
-# MongoDB Workshop
+# MongoDB Hackathon Workshop
 
 MongoDB is a popular, easy-to-use database. It is a NoSQL database which stores JSON-like documents. This workshop will cover the following points:
 
