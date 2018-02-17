@@ -421,6 +421,11 @@ MongoDB adds an `_id` property to each inserted document. The value of `_id` is 
 The ObjectId is a 24-character hex string. You'll notice it's wrapped in `ObjectId()`. This is a special BSON type. You can read more about ObjectIds in the [ObjectId documentation](https://docs.mongodb.com/manual/reference/bson-types/#objectid).
 
 
+## Create an mLab database
+
+See the [documentation here](http://docs.mlab.com/) for a step by step guide for creating a database. Remember to create your database user and password on the Users tab for your database. You'll need to create these to connect to your database.
+
+
 ## Querying
 
 Exit the Mongo shell by running the exit command:
@@ -441,7 +446,7 @@ On Windows, you may not have `curl` installed, so you can right click on this li
 Now import the data into the `pokemon` collection in the `pokedex` database using the `mongoimport` command:
 
 ```
-$ mongoimport -d pokedex -c pokemon --jsonArray --maintainInsertionOrder --file pokedex.json
+$ mongoimport -h <host>:<port> -d <database> -c <collection> -u <user> -p <password> --jsonArray --maintainInsertionOrder --file pokedex.json
 2018-02-16T12:44:37.951-0800    connected to: localhost
 2018-02-16T12:44:37.968-0800    imported 151 documents
 ```
@@ -451,29 +456,12 @@ Start the Mongo shell again:
 ```
 $ mongo
 MongoDB shell version v3.6.1
-connecting to: mongodb://127.0.0.1:27017
-MongoDB server version: 3.6.1
+connecting to: mongodb://ds012345@mlab.com:12345
+MongoDB server version: 3.4.10
 >
 ```
 
-Now let's take a look at the databases:
-
-```
-> show dbs
-admin   0.000GB
-local   0.000GB
-pokedex 0.000GB
-test    0.000GB
-```
-
-Switch to use the `pokedex` database:
-
-```
-> use pokedex
-switched to db pokedex
-```
-
-This sets the `db` variable to the `pokedex` database:
+The `db` variable is already set to your database:
 
 ```
 > db
@@ -553,7 +541,7 @@ Find all the Pokemon that are both water type and less than 1.00 m tall:
 ```
 
 
-## Counting
+### Counting
 
 You can count the number of documents that match a _filter document_ by using the `count` method on a collection:
 
@@ -574,73 +562,159 @@ Or, instead of appending `.pretty()` to `find` queries, you can append `.count()
 
 ### Projection
 
-If you don't want to return all the properties in a document, you can use a _projection document_ as the second 
+If you don't want to return all the properties in a document, you can use a _projection document_ as the second argument to the `find` command to only show certain arguments. For example, to only show the name and weight of Pokemon 1.7m tall:
+
+```
+> db.pokemon.find({ height: "1.70 m" }, { name: true, weight: true }).pretty()
+{
+        "_id" : ObjectId("5a8744754c24cb5c863ed309"),
+        "name" : "Charizard",
+        "weight" : "90.5 kg"
+}
+{
+        "_id" : ObjectId("5a8744754c24cb5c863ed33a"),
+        "name" : "Golduck",
+        "weight" : "76.6 kg"
+}
+{
+        "_id" : ObjectId("5a8744754c24cb5c863ed34a"),
+        "name" : "Victreebel",
+        "weight" : "15.5 kg"
+}
+{
+        "_id" : ObjectId("5a8744754c24cb5c863ed351"),
+        "name" : "Rapidash",
+        "weight" : "95.0 kg"
+}
+{
+        "_id" : ObjectId("5a8744754c24cb5c863ed35a"),
+        "name" : "Dewgong",
+        "weight" : "120.0 kg"
+}
+{
+        "_id" : ObjectId("5a8744754c24cb5c863ed393"),
+        "name" : "Articuno",
+        "weight" : "55.4 kg"
+}
+```
+
+The `_id` field is always shown unless you explicitly ask for it not to be shown:
+
+```
+> db.pokemon.find({ height: "1.70 m" }, { _id: false, name: true, weight: true }).pretty()
+{ "name" : "Charizard", "weight" : "90.5 kg" }
+{ "name" : "Golduck", "weight" : "76.6 kg" }
+{ "name" : "Victreebel", "weight" : "15.5 kg" }
+{ "name" : "Rapidash", "weight" : "95.0 kg" }
+{ "name" : "Dewgong", "weight" : "120.0 kg" }
+{ "name" : "Articuno", "weight" : "55.4 kg" }
+```
+
 
 ### Update
 
-`updateOne`
+To update a single document, you can use the `updateOne` command. First, let's look at the document for Psyduck:
 
-`updateMany`
+```
+> db.pokemon.find({ name: "Psyduck"}, { name: true, height: true }).pretty()
+{
+        "_id" : ObjectId("5a8744754c24cb5c863ed339"),
+        "name" : "Psyduck",
+        "height" : "0.79 m"
+}
+```
+
+Now we'll use the `$set` operator to change the height of Psyduck to 10 meters. Scary!
+
+```
+> db.pokemon.updateOne({ name: "Psyduck"}, { $set: { height: "10.0 m" } })
+{ "acknowledged" : true, "matchedCount" : 1, "modifiedCount" : 1 }
+```
+
+The output tells us that the update found one document and modified one document. Let's check if the record was modified:
+
+```
+> db.pokemon.find({ name: "Psyduck"}, { name: true, height: true }).pretty()
+{
+        "_id" : ObjectId("5a8744754c24cb5c863ed339"),
+        "name" : "Psyduck",
+        "height" : "10.0 m"
+}
+```
+
+If you want to update multiple documents at once, use the `updateMany` command. This will increment the average spawns of the two heaviest Pokemon by 1:
+
+```
+> db.pokemon.updateMany({ weight: { $gt: "90.0 kg" } }, { $inc: { avg_spawns: 1 } })
+{ "acknowledged" : true, "matchedCount" : 2, "modifiedCount" : 2 }
+```
 
 ### Delete
 
-`deleteOne`
+To delete documents, you can use `deleteOne` or `deleteMany`. For example:
 
-`deleteMany`
+```
+> db.pokemon.deleteOne({ name: "Mewtwo" })
+{ "acknowledged" : true, "deletedCount" : 1 }
+```
 
 
 ## Indexing and Performance
 
-db.collection.createIndex({property: 1})
+Indexes are vital to understand if you want your database queries to be fast. If you search for documents using an unindexed field such as `name`, MongoDB will have to go through every single document on the disk and check the value of `name` to return the results.
+
+```
+> db.pokemon.find({ name: "Mew" }).explain({ executionStats: 1 })
+```
+
+The `explain` command will give you information about how a query is executed. We see in the execution stats that the `totalDocsExamined` were 150! Every document in the collection! If you have thousands or millions of records, this will get unbearably slow!
+
+If you index a field, MongoDB will order them and put them in a data structure (a B-tree) which will make it very, very quick to find values. This index is smaller than all the documents, so it can fit in memory, making tree-traversal lightning fast compared to having to read documents from the disk.
+
+Indexing is a deep and nuanced subject. If you start to run production apps, you should read and fully understand [the indexing documentation](https://docs.mongodb.com/manual/indexes/). For now, here's how to index a single field:
+
+```
+> db.pokemon.createIndex({ name: 1 })
+{
+        "createdCollectionAutomatically" : false,
+        "numIndexesBefore" : 1,
+        "numIndexesAfter" : 2,
+        "ok" : 1
+}
+```
+
+Now, running `explain` on the previous command:
+
+```
+> db.pokemon.find({ name: "Mew" }).explain({ executionStats: 1 })
+```
+
+We can see that the `totalDocsExamined` is 1. MongoDB was able to immediately pick out the answer to our query. This is much more efficient.
+
 
 ## Aggregation Framework
 
-You can create even more complex queries by using the _Aggregation Framework_. These are
+You can create even more complex queries by using the _Aggregation Framework_. These are a powerful series of operations you can perform to manipulate your data.
 
 For example, this will select a random Pokemon:
 
 ```
+> db.pokemon.aggregate([{ $sample: { size: 1 } }])
 ```
 
-This will group Pokemon by their type:
+This will group Pokemon by their type and show how many Pokemon of each type there are:
 
 ```
+> db.pokemon.aggregate([{ $group: { _id: "$type", count: { $sum: 1 } } }])
 ```
 
-You can delve deeper into aggregations in the documentation.
+You can delve deeper into aggregations in the [documentation](https://docs.mongodb.com/manual/aggregation/).
 
 
-## NodeJS and Mongoose
+## MongoDB drivers
 
-### Create an mLab database
+If you want to talk to a MongoDB server from your application, you need to use a driver. There are drivers for every language you could need: Java, Python, NodeJS, PHP, C#, and dozens more.
 
-### Create a NodeJS Project
+You can find the driver for your language here: https://docs.mongodb.com/ecosystem/drivers/
 
-```
-$ mkdir movies
-$ cd movies
-$ npm init -y
-$ touch app.js
-$ npm install mongoose
-```
-
-```js
-const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/test', { useMongoClient: true });
-
-movieSchema = {
-  name: String
-}
-
-var Movie = mongoose.model('Movie', movieSchema);
-
-var movie = new Movie({ name: 'Zildjian' });
-
-movie.save(function (err, doc) {
-  if (err) {
-    console.log(err);
-  } else {
-    console.log(doc);
-  }
-});
-```
+Each driver will come with a guide for getting started. mLab have also compiled examples for many drivers here: https://github.com/mongolab/mongodb-driver-examples
